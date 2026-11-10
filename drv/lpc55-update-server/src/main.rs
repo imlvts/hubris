@@ -258,7 +258,11 @@ impl idl::InOrderUpdateImpl for ServerImpl<'_> {
         // has some meaning.
         let range = image_range(component, slot).0;
         let erase_start = range.start + (endblock as u32 * PAGE_SIZE);
-        self.flash_erase_range(erase_start..range.end)?;
+        // If the slot was filled up exactly, do not call `flash_erase_range`
+        // with an invalid range.
+        if erase_start < range.end {
+            self.flash_erase_range(erase_start..range.end)?;
+        }
         self.state = UpdateState::Finished;
         ringbuf_entry!(Trace::State(self.state));
         self.image = None;
